@@ -158,7 +158,7 @@ async function handleUnlock() {
                     cursor: "pointer",
                   }}
                 >
-                  {processing ? "Processing..." : "Unlock (₦1,000)"}
+                  {processing ? "Processing..." : "Unlock (₦1,500)"}
                 </button>
               </div>
             ) : (
