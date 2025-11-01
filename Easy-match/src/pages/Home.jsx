@@ -151,7 +151,7 @@ const Home = () => {
             alt={post.displayName}
             style={{
               width: "100%",
-              height: "500px",
+              height: "400px",
               objectFit: "cover",
               borderRadius: "12px",
               marginBottom: "8px",
@@ -172,7 +172,7 @@ const Home = () => {
               showModal(<PostDetails post={post} user={user} />)
             }
           >
-            View Details (₦1,000)
+            View Details (₦1,500)
           </button>
         </div>
       ))
@@ -243,11 +243,11 @@ const Home = () => {
               <ol className="small">
                 <li>Register (must be 18+)</li>
                 <li>
-                  Upload profile. Females pay ₦500 to post; males pay ₦700 to
+                  Upload profile. Females pay ₦700 to post; males pay ₦700 to
                   post
                 </li>
                 <li>
-                  Browse public posts. Click 'View' to pay ₦1,000 to unlock full
+                  Browse public posts. Click 'View' to pay ₦1,500 to unlock full
                   contact info
                 </li>
                 <li>
