@@ -32,7 +32,6 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
 
         if (res.total > 0) {
           setUnlocked(true);
-
           // Sync to local cache
           const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
           localStorage.setItem("unlockedPosts", JSON.stringify(updated));
@@ -46,43 +45,60 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
   }, [user, post]);
 
   // ✅ Unlock handler
-async function handleUnlock() {
-  if (!user) {
-    alert("Please login to unlock contact info.");
-    return;
-  }
-
-  setProcessing(true);
-  try {
-    // ✅ Call backend to initialize Paystack transaction
-    const res = await fetch("https://easy-match-backend.vercel.app/api/paystack/initiate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.$id,
-        email: user.email,
-        postId: post.$id,
-        amount: 1500, // ₦1,500 unlock fee
-      }),
-    });
-
-    const data = await res.json();
-    if (!data || !data.authorization_url) {
-      alert("Unable to start payment.");
+  async function handleUnlock() {
+    if (!user) {
+      alert("Please login to unlock contact info.");
       return;
     }
 
-    // ✅ Redirect user to Paystack payment page
-    window.location.href = data.authorization_url;
+    setProcessing(true);
+    try {
+      // Step 1: Start Paystack payment
+      const reference = await startPaystackTransaction(
+        1500, // ₦1,500 unlock fee
+        "Unlock contact info",
+        { postId: post.$id, userId: user.$id },
+        user.email
+      );
 
-  } catch (err) {
-    console.error("Payment error:", err);
-    alert("Error starting payment: " + (err.message || err));
-  } finally {
-    setProcessing(false);
+      if (!reference) {
+        alert("Payment could not start or was cancelled.");
+        return;
+      }
+
+      // Step 2: Verify payment after success (server-side)
+      const verifyData = await verifyPaymentOnServer(reference, 1500);
+      if (!verifyData.verified) {
+        throw new Error("Payment verification failed. Please try again.");
+      }
+
+      // Step 3: Store unlock record in Appwrite
+      await databases.createDocument(
+        Config.databaseId,
+        Config.COLLECTION_PURCHASES,
+        ID.unique(),
+        {
+          buyerId: user.$id,
+          postId: post.$id,
+          verified: true,
+          amount: 1500,
+        }
+      );
+
+      // Step 4: Cache unlock locally
+      const cachedUnlocks = JSON.parse(localStorage.getItem("unlockedPosts") || "[]");
+      const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
+      localStorage.setItem("unlockedPosts", JSON.stringify(updated));
+
+      setUnlocked(true);
+      alert("✅ Contact unlocked successfully!");
+    } catch (err) {
+      console.error("Unlock error:", err);
+      alert("Error unlocking contact: " + err.message);
+    } finally {
+      setProcessing(false);
+    }
   }
-}
-
 
   // ✅ Build contact links
   const whatsappLink = post.whatsapp
