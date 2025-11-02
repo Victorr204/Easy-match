@@ -6,15 +6,28 @@
   --shadow: 0 6px 18px rgba(20, 20, 60, 0.06);
   --header-h: 72px;
   --footer-h: 92px;
+  --container-padding: 16px;
+  --card-spacing: 20px;
 }
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   font-family: Inter, system-ui, Segoe UI, Arial;
 }
-html, body {
+
+html {
   height: 100%;
+  font-size: 16px;
 }
+
+body {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 #root,
 #root > div {
   min-height: 100vh;
@@ -66,23 +79,26 @@ header {
   margin-left: 8px;
 }
 .container {
-
-  width: 90%;
+  width: 92%;
   max-width: 1400px;
-  margin: 18px auto;
-  padding: 12px 16px;
+  margin: 0 auto;
+  padding: var(--container-padding);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 1;
+  min-height: calc(100vh - var(--header-h));
+  position: relative;
+  gap: var(--card-spacing);
 }
 
 main {
   width: 100%;
-  margin: 0 auto;
-  padding: 12px 0;
-  flex: 0 auto;
-  height: calc(100vh - var(--header-h) - var(--footer-h));
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-spacing);
+  padding: var(--container-padding) 0;
 }
 
 .grid {
@@ -96,6 +112,7 @@ main {
   padding: 14px;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(20, 20, 60, 0.06);
+  margin-bottom: 20px;
 }
 
 .form-row {
@@ -122,23 +139,20 @@ button {
 
 .posts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--card-spacing);
   padding: 8px;
+  width: 100%;
+  margin: 0 auto;
 }
 
-/* Make the posts list scrollable and prevent individual cards from
-   becoming too squished vertically. The #postsList id is used in
-   Home.jsx so target it directly. The max-height calculation uses the
-   header/footer variables so the list fits inside the viewport. */
 #postsList {
-  /* align to start so items stack from top */
   align-content: start;
-  /* Use most of the viewport height, leaving just enough room for
-     header/footer and minimal padding */
-  max-height: calc(100vh - var(--header-h) - var(--footer-h) - 80px);
-  overflow-y: auto;
-  padding-right: 6px; /* provide space for scrollbar */
+  width: 100%;
+  display: grid;
+  gap: var(--card-spacing);
+  padding-right: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
 /* Ensure each post keeps a sensible minimum height so content and
@@ -166,7 +180,7 @@ button {
 
 .post {
   padding: 16px;
-  margin: 6px;
+  margin: 0;
   border-radius: 12px;
   background: linear-gradient(180deg, #fff, #fbfbff);
   position: relative;
@@ -175,6 +189,8 @@ button {
   transition: all 0.3s ease-in-out;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 600px;
 }
 
 .post img {
@@ -267,17 +283,18 @@ button {
 
 footer {
   width: 100%;
-  margin: 18px 0 0 0;
-  padding: 18px 20px;
+  margin: auto 0 0 0;
+  padding: 24px 20px;
   text-align: center;
   color: var(--text-light);
   font-size: 14px;
   background: var(--card);
   box-shadow: var(--shadow);
   border-top: 1px solid rgba(0,0,0,0.03);
-  /* keep the footer flush with the container edges on wide screens */
   border-radius: 6px;
   align-self: stretch;
+  position: relative;
+  z-index: 10;
 }
 
 /* Modal */
@@ -299,13 +316,105 @@ footer {
   border-radius: 12px;
 }
 
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+  :root {
+    --container-padding: 14px;
+    --card-spacing: 16px;
+  }
+  
+  .posts, #postsList {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
 @media (max-width: 900px) {
+  :root {
+    --header-h: 64px;
+    --container-padding: 12px;
+    --card-spacing: 14px;
+  }
+
+  .container {
+    width: 100%;
+    margin: 0;
+    padding: var(--container-padding);
+  }
+
   .grid {
     grid-template-columns: 1fr;
+    gap: var(--card-spacing);
+  }
+
+  .posts, #postsList {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    padding-right: 0;
   }
 
   .logo {
     width: 40px;
     height: 40px;
   }
+
+  header {
+    padding: 12px 16px;
+  }
+
+  footer {
+    margin-top: auto;
+    border-radius: 0;
+    padding: 20px var(--container-padding);
+  }
 }
+
+@media (max-width: 600px) {
+  :root {
+    --container-padding: 10px;
+    --card-spacing: 12px;
+  }
+
+  .posts, #postsList {
+    grid-template-columns: 1fr;
+  }
+
+  .post {
+    margin: 0;
+  }
+
+  .post img {
+    height: 300px;
+  }
+
+  header {
+    padding: 10px var(--container-padding);
+  }
+
+  .brand div:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --header-h: 56px;
+  }
+
+  .post img {
+    height: 250px;
+  }
+
+  .post {
+    padding: 12px;
+  }
+
+  .logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
