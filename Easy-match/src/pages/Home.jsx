@@ -17,6 +17,7 @@ const Home = () => {
   const [posts, setPosts] = useState([]);
   const [myPost, setMyPost] = useState(null);
   const [modalContent, setModalContent] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const showModal = (content) => setModalContent(content);
   const closeModal = () => setModalContent(null);
@@ -102,6 +103,51 @@ const Home = () => {
             </button>
           )}
         </div>
+
+        {/* Hamburger for small screens */}
+        <button
+          className="hamburger"
+          aria-label="Toggle menu"
+          onClick={() => setMobileOpen((s) => !s)}
+        >
+          <span className="hamburger-box">
+            <span className="hamburger-inner" />
+          </span>
+        </button>
+
+        {mobileOpen && (
+          <div className="mobile-nav">
+            {!user ? (
+              <>
+                <button
+                  onClick={() => {
+                    openRegister();
+                    setMobileOpen(false);
+                  }}
+                >
+                  Register
+                </button>
+                <button
+                  onClick={() => {
+                    openLogin();
+                    setMobileOpen(false);
+                  }}
+                >
+                  Login
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setMobileOpen(false);
+                }}
+              >
+                Logout
+              </button>
+            )}
+          </div>
+        )}
       </header>
 
       <main>
