@@ -1,15 +1,12 @@
 // src/services/paystack.js
-export const PAYSTACK_PUBLIC_KEY = "pk_test_xxxxx";
-export const SERVER_VERIFY_ENDPOINT = "https://your-backend.com/api/verify-paystack";
+export const PAYSTACK_PUBLIC_KEY = "pk_live_xxxxxxxxxxxxx"; // or test key
+export const SERVER_VERIFY_ENDPOINT =
+  "https://easy-match-backend.vercel.app/api/paystack/verify";
 
-export function startPaystackTransaction(amountNGN, title, metadata, email = "user@example.com") {
+export function startPaystackTransaction(amountNGN, title, metadata, email) {
   return new Promise((resolve) => {
     if (!window.PaystackPop) {
       alert("Paystack not loaded");
-      return resolve(null);
-    }
-    if (!PAYSTACK_PUBLIC_KEY || PAYSTACK_PUBLIC_KEY.includes("xxxx")) {
-      alert("Paystack public key not configured");
       return resolve(null);
     }
 
@@ -19,7 +16,15 @@ export function startPaystackTransaction(amountNGN, title, metadata, email = "us
       amount: amountNGN * 100,
       currency: "NGN",
       ref: "EM_" + Math.floor(Math.random() * 1e9),
-      metadata: { custom_fields: [{ display_name: title, variable_name: "meta", value: JSON.stringify(metadata) }] },
+      metadata: {
+        custom_fields: [
+          {
+            display_name: title,
+            variable_name: "meta",
+            value: JSON.stringify(metadata),
+          },
+        ],
+      },
       callback: (response) => {
         resolve(response.reference);
       },
