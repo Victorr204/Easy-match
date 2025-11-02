@@ -158,7 +158,7 @@ button {
 /* Ensure each post keeps a sensible minimum height so content and
    image don't collapse into a tiny box. */
 .post {
-  min-height: 650px;
+  min-height: 500px;
 }
 
 /* If the container becomes narrow (single-column), make posts use the
@@ -388,9 +388,30 @@ footer {
   header {
     padding: 10px var(--container-padding);
   }
+  
 
-  .brand div:last-child {
-    display: none;
+  /* Show site name and motto (motto smaller) on small screens */
+  .brand > div {
+    display: block;
+  }
+
+  .brand > div > div:first-child {
+    font-size: 15px;
+    line-height: 1.05;
+    font-weight: 700;
+  }
+
+  .brand > div > div:last-child {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  /* Reduce gap so header items fit better */
+  .brand {
+    gap: 8px;
+    align-items: center;
   }
 }
 
@@ -415,6 +436,25 @@ footer {
   button {
     padding: 8px 12px;
     font-size: 14px;
+  }
+  /* Stack logo above the text and center-align on very small screens */
+  .brand {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .brand > div {
+    text-align: center;
+  }
+
+  .brand > div > div:first-child {
+    font-size: 14px;
+  }
+
+  .brand > div > div:last-child {
+    font-size: 11px;
+    display: block;
   }
 }
 

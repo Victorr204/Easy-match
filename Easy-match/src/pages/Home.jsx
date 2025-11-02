@@ -10,6 +10,7 @@ import PostDetails from "../components/PostDetails";
 import CreatePostForm from "../components/CreatePostForm";
 import EditPostForm from "../components/EditPostForm";
 import MyPurchases from "../components/MyPurchases";
+import logo from "../assets/logo.png";
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -74,7 +75,7 @@ const Home = () => {
     <div className="container">
       <header>
         <div className="brand">
-          <div className="logo">EM</div>
+          <div className="logo"><img src={logo} alt="logo" width={48} height={48} /></div>
           <div>
             <div style={{ fontWeight: 700 }}>EasyMatch</div>
             <div style={{ fontSize: 12, color: "#666" }}>
