@@ -1,5 +1,5 @@
 // src/services/paystack.js
-export const PAYSTACK_PUBLIC_KEY = "pk_live_xxxxxxxxxxxxx"; // or test key
+export const PAYSTACK_PUBLIC_KEY = "pk_live_39173526ccd42bca840db69fddedca8d09c9d3fd"; // or test key
 export const SERVER_VERIFY_ENDPOINT =
   "https://easy-match-backend.vercel.app/api/paystack/verify";
 
