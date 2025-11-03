@@ -12,14 +12,12 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
     async function checkUnlock() {
       if (!user) return;
 
-      // Check local cache
       const cachedUnlocks = JSON.parse(localStorage.getItem("unlockedPosts") || "[]");
       if (cachedUnlocks.includes(post.$id)) {
         setUnlocked(true);
       }
 
       try {
-        // Check Appwrite database
         const res = await databases.listDocuments(
           Config.databaseId,
           Config.COLLECTION_PURCHASES,
@@ -32,7 +30,6 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
 
         if (res.total > 0) {
           setUnlocked(true);
-          // Sync to local cache
           const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
           localStorage.setItem("unlockedPosts", JSON.stringify(updated));
         }
@@ -44,7 +41,7 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
     checkUnlock();
   }, [user, post]);
 
-  // ✅ Unlock handler
+  // ✅ Unlock handler (with 1.2% charge)
   async function handleUnlock() {
     if (!user) {
       alert("Please login to unlock contact info.");
@@ -53,9 +50,13 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
 
     setProcessing(true);
     try {
-      // Step 1: Start Paystack payment
+      const baseAmount = 1500; // ₦1,500 unlock fee
+      const charge = baseAmount * 0.012; // 1.2% fee
+      const totalAmount = Math.round(baseAmount + charge); // ₦1,518
+
+      // Step 1: Start Paystack transaction
       const reference = await startPaystackTransaction(
-        1500, // ₦1,500 unlock fee
+        totalAmount,
         "Unlock contact info",
         { postId: post.$id, userId: user.$id },
         user.email
@@ -66,8 +67,8 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
         return;
       }
 
-      // Step 2: Verify payment after success (server-side)
-      const verifyData = await verifyPaymentOnServer(reference, 1500);
+      // Step 2: Verify payment on the server
+      const verifyData = await verifyPaymentOnServer(reference, totalAmount);
       if (!verifyData.verified) {
         throw new Error("Payment verification failed. Please try again.");
       }
@@ -81,17 +82,19 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
           buyerId: user.$id,
           postId: post.$id,
           verified: true,
-          amount: 1500,
+          amount: baseAmount, // store only main fee
+          totalPaid: totalAmount, // store total including fee
+          chargeFee: charge, // optional record of 1.2% charge
         }
       );
 
-      // Step 4: Cache unlock locally
+      // Step 4: Update local cache
       const cachedUnlocks = JSON.parse(localStorage.getItem("unlockedPosts") || "[]");
       const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
       localStorage.setItem("unlockedPosts", JSON.stringify(updated));
 
       setUnlocked(true);
-      alert("✅ Contact unlocked successfully!");
+      alert(`✅ Contact unlocked successfully! You were charged ₦${totalAmount.toLocaleString()}.`);
     } catch (err) {
       console.error("Unlock error:", err);
       alert("Error unlocking contact: " + err.message);
@@ -111,7 +114,6 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
       : `https://instagram.com/${post.instagram.replace("@", "")}`
     : null;
 
-  // ✅ Correct image URL for Appwrite 1.5+
   const imageUrl = post.imageFileId
     ? `${Config.endpoint}/storage/buckets/${Config.photoBucketId}/files/${post.imageFileId}/view?project=${Config.projectId}`
     : "https://via.placeholder.com/300x200?text=No+Photo";
@@ -154,12 +156,12 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
                   padding: "10px",
                   borderRadius: 8,
                   textAlign: "center",
-                  opacity: 0.8,
+                  opacity: 0.9,
                 }}
               >
                 🔒 <strong>Contact info locked</strong>
                 <p style={{ fontSize: "0.9em", marginTop: 5 }}>
-                  Pay ₦1,500 to unlock this user’s contact information.
+                  Pay ₦1,500 to unlock this user’s contact info.
                 </p>
                 <button
                   onClick={handleUnlock}

@@ -27,9 +27,14 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
     try {
       setLoading(true);
 
-      // 🟢 Step 1: Start Paystack payment from frontend
+      // 🧮 Step 1: Calculate total with 1.2% charge
+      const baseAmount = 700; // ₦700 post creation fee
+      const charge = baseAmount * 0.012; // 1.2% processing fee
+      const totalAmount = Math.round(baseAmount + charge); // ₦708
+
+      // 🟢 Step 2: Start Paystack payment from frontend
       const reference = await startPaystackTransaction(
-        700,
+        totalAmount,
         "EasyMatch Profile Post Fee",
         { displayName, userId: user.$id },
         user.email
@@ -41,20 +46,20 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
         return;
       }
 
-      // 🟢 Step 2: Verify payment on backend
-      const verifyData = await verifyPaymentOnServer(reference, 700);
+      // 🟢 Step 3: Verify payment on backend
+      const verifyData = await verifyPaymentOnServer(reference, totalAmount);
       if (!verifyData.verified) {
         throw new Error("Payment could not be verified. Please try again.");
       }
 
-      // ✅ Step 3: Upload image to Appwrite storage
+      // ✅ Step 4: Upload image to Appwrite storage
       const uploaded = await storage.createFile(
         Config.photoBucketId,
         ID.unique(),
         photo
       );
 
-      // ✅ Step 4: Create post document in Appwrite
+      // ✅ Step 5: Create post document in Appwrite
       await databases.createDocument(
         Config.databaseId,
         Config.COLLECTION_POSTS,
@@ -71,10 +76,13 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
           instagram,
           imageFileId: uploaded.$id,
           paymentVerified: true,
+          amountPaid: baseAmount,
+          totalPaid: totalAmount,
+          chargeFee: charge,
         }
       );
 
-      alert("🎉 Post created successfully!");
+      alert(`🎉 Post created successfully! You were charged ₦${totalAmount.toLocaleString()}.`);
       refreshPosts && refreshPosts();
       onClose && onClose();
     } catch (err) {
@@ -156,9 +164,12 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
       </div>
       <div style={{ textAlign: "right", marginTop: 10 }}>
         <button onClick={doCreatePost} disabled={loading}>
-          {loading ? "Processing..." : "Create Post"}
+          {loading ? "Processing..." : "Create Post (₦708)"}
         </button>
       </div>
+      <p style={{ fontSize: "0.85em", opacity: 0.8, textAlign: "right" }}>
+        ₦700 
+      </p>
     </div>
   );
 }

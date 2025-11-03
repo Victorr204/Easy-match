@@ -145,6 +145,44 @@ button {
   cursor: pointer;
 }
 
+#btnMyPurchases{
+  display: block;
+  margin-top: 3px;
+}
+
+
+.page-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.page-container .card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.page-container h2 {
+  margin-bottom: 8px;
+}
+
+.btn-primary {
+  display: inline-block;
+  background: #007bff;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+
 .posts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
