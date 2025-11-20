@@ -14,52 +14,54 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  async function doCreatePost() {
-    if (!displayName || !age || !location || !photo) {
-      alert("Please fill all required fields and upload a photo.");
-      return;
+async function doCreatePost() {
+  if (!displayName || !age || !location || !photo) {
+    alert("Please fill all required fields and upload a photo.");
+    return;
+  }
+  if (!user) {
+    alert("You must be logged in to create a post.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // 🟦 Step A — Check total number of posts already created
+    const postsList = await databases.listDocuments(
+      Config.databaseId,
+      Config.COLLECTION_POSTS
+    );
+
+    const totalPosts = postsList.total;
+
+    let baseAmount = 0;
+    let charge = 0;
+    let totalAmount = 0;
+    let paymentRequired = true;
+
+    // 🟩 Step B — First 100 posts are FREE
+    if (totalPosts < 100) {
+      baseAmount = 0;
+      charge = 0;
+      totalAmount = 0;
+      paymentRequired = false;
+    } else {
+      //  Step C — Paid posts after 100 (₦500 + 1.2%)
+      baseAmount = 500;
+      charge = baseAmount * 0.012; // 1.2%
+      totalAmount = Math.round(baseAmount + charge);
+      paymentRequired = true;
     }
-    if (!user) {
-      alert("You must be logged in to create a post.");
-      return;
-    }
 
-    try {
-      setLoading(true);
-
-      // 🧮 Step 1: Calculate total with 1.2% charge
-      const baseAmount = 700; // ₦700 post creation fee
-      const charge = baseAmount * 0.012; // 1.2% processing fee
-      const totalAmount = Math.round(baseAmount + charge); // ₦708
-
-      // 🟢 Step 2: Start Paystack payment from frontend
-      const reference = await startPaystackTransaction(
-        totalAmount,
-        "EasyMatch Profile Post Fee",
-        { displayName, userId: user.$id },
-        user.email
-      );
-
-      if (!reference) {
-        alert("Payment was cancelled or not completed.");
-        setLoading(false);
-        return;
-      }
-
-      // 🟢 Step 3: Verify payment on backend
-      const verifyData = await verifyPaymentOnServer(reference, totalAmount);
-      if (!verifyData.verified) {
-        throw new Error("Payment could not be verified. Please try again.");
-      }
-
-      // ✅ Step 4: Upload image to Appwrite storage
+    //  === FREE POST (NO PAYMENT) ===
+    if (!paymentRequired) {
       const uploaded = await storage.createFile(
         Config.photoBucketId,
         ID.unique(),
         photo
       );
 
-      // ✅ Step 5: Create post document in Appwrite
       await databases.createDocument(
         Config.databaseId,
         Config.COLLECTION_POSTS,
@@ -76,22 +78,77 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
           instagram,
           imageFileId: uploaded.$id,
           paymentVerified: true,
-          amountPaid: baseAmount,
-          totalPaid: totalAmount,
-          chargeFee: charge,
+          amountPaid: 0,
+          totalPaid: 0,
+          chargeFee: 0,
+          freePost: true,
         }
       );
 
-      alert(`🎉 Post created successfully! You were charged ₦${totalAmount.toLocaleString()}.`);
+      alert("🎉 Congratulations! Your post was created for FREE as part of the first 100 users.");
       refreshPosts && refreshPosts();
       onClose && onClose();
-    } catch (err) {
-      console.error("Error creating post:", err);
-      alert("Error creating post: " + err.message);
-    } finally {
-      setLoading(false);
+      return;
     }
+
+    // 🟥 === PAID POST ===
+    const reference = await startPaystackTransaction(
+      totalAmount,
+      "EasyMatch Profile Post Fee",
+      { displayName, userId: user.$id },
+      user.email
+    );
+
+    if (!reference) {
+      alert("Payment was cancelled or not completed.");
+      setLoading(false);
+      return;
+    }
+
+    const verifyData = await verifyPaymentOnServer(reference, totalAmount);
+    if (!verifyData.verified) {
+      throw new Error("Payment could not be verified. Please try again.");
+    }
+
+    const uploaded = await storage.createFile(
+      Config.photoBucketId,
+      ID.unique(),
+      photo
+    );
+
+    await databases.createDocument(
+      Config.databaseId,
+      Config.COLLECTION_POSTS,
+      ID.unique(),
+      {
+        ownerId: user.$id,
+        displayName,
+        age: parseFloat(age),
+        gender,
+        location,
+        bio,
+        phone,
+        whatsapp,
+        instagram,
+        imageFileId: uploaded.$id,
+        paymentVerified: true,
+        amountPaid: baseAmount,
+        totalPaid: totalAmount,
+        chargeFee: charge,
+      }
+    );
+
+    alert(`🎉 Post created! You were charged ₦${totalAmount.toLocaleString()}.`);
+    refreshPosts && refreshPosts();
+    onClose && onClose();
+  } catch (err) {
+    console.error("Error creating post:", err);
+    alert("Error creating post: " + err.message);
+  } finally {
+    setLoading(false);
   }
+}
+
 
   return (
     <div>
@@ -164,11 +221,11 @@ export default function CreatePostForm({ user, onClose, refreshPosts }) {
       </div>
       <div style={{ textAlign: "right", marginTop: 10 }}>
         <button onClick={doCreatePost} disabled={loading}>
-          {loading ? "Processing..." : "Create Post (₦708)"}
+          {loading ? "Processing..." : "Create Post (₦500)"}
         </button>
       </div>
       <p style={{ fontSize: "0.85em", opacity: 0.8, textAlign: "right" }}>
-        ₦700 
+        ₦500 
       </p>
     </div>
   );

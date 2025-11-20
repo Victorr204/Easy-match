@@ -41,67 +41,68 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
     checkUnlock();
   }, [user, post]);
 
-  // ✅ Unlock handler (with 1.2% charge)
-  async function handleUnlock() {
-    if (!user) {
-      alert("Please login to unlock contact info.");
+  // ✅ Unlock handler (with 4% charge)
+ async function handleUnlock() {
+  if (!user) {
+    alert("Please login to unlock contact info.");
+    return;
+  }
+
+  setProcessing(true);
+  try {
+    const baseAmount = 500; // NEW PRICE: ₦500 unlock fee
+    const charge = baseAmount * 0.04; // NEW 4% processing fee
+    const totalAmount = Math.round(baseAmount + charge); // ₦520
+
+    // Step 1: Start Paystack transaction
+    const reference = await startPaystackTransaction(
+      totalAmount,
+      "Unlock contact info",
+      { postId: post.$id, userId: user.$id },
+      user.email
+    );
+
+    if (!reference) {
+      alert("Payment could not start or was cancelled.");
       return;
     }
 
-    setProcessing(true);
-    try {
-      const baseAmount = 1500; // ₦1,500 unlock fee
-      const charge = baseAmount * 0.012; // 1.2% fee
-      const totalAmount = Math.round(baseAmount + charge); // ₦1,518
-
-      // Step 1: Start Paystack transaction
-      const reference = await startPaystackTransaction(
-        totalAmount,
-        "Unlock contact info",
-        { postId: post.$id, userId: user.$id },
-        user.email
-      );
-
-      if (!reference) {
-        alert("Payment could not start or was cancelled.");
-        return;
-      }
-
-      // Step 2: Verify payment on the server
-      const verifyData = await verifyPaymentOnServer(reference, totalAmount);
-      if (!verifyData.verified) {
-        throw new Error("Payment verification failed. Please try again.");
-      }
-
-      // Step 3: Store unlock record in Appwrite
-      await databases.createDocument(
-        Config.databaseId,
-        Config.COLLECTION_PURCHASES,
-        ID.unique(),
-        {
-          buyerId: user.$id,
-          postId: post.$id,
-          verified: true,
-          amount: baseAmount, // store only main fee
-          totalPaid: totalAmount, // store total including fee
-          chargeFee: charge, // optional record of 1.2% charge
-        }
-      );
-
-      // Step 4: Update local cache
-      const cachedUnlocks = JSON.parse(localStorage.getItem("unlockedPosts") || "[]");
-      const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
-      localStorage.setItem("unlockedPosts", JSON.stringify(updated));
-
-      setUnlocked(true);
-      alert(`✅ Contact unlocked successfully! You were charged ₦${totalAmount.toLocaleString()}.`);
-    } catch (err) {
-      console.error("Unlock error:", err);
-      alert("Error unlocking contact: " + err.message);
-    } finally {
-      setProcessing(false);
+    // Step 2: Verify payment on the server
+    const verifyData = await verifyPaymentOnServer(reference, totalAmount);
+    if (!verifyData.verified) {
+      throw new Error("Payment verification failed. Please try again.");
     }
+
+    // Step 3: Store unlock record in Appwrite
+    await databases.createDocument(
+      Config.databaseId,
+      Config.COLLECTION_PURCHASES,
+      ID.unique(),
+      {
+        buyerId: user.$id,
+        postId: post.$id,
+        verified: true,
+        amount: baseAmount, // store only main fee
+        totalPaid: totalAmount, // include fee
+        chargeFee: charge,      // 4% charge stored
+      }
+    );
+
+    // Step 4: Update local cache
+    const cachedUnlocks = JSON.parse(localStorage.getItem("unlockedPosts") || "[]");
+    const updated = Array.from(new Set([...cachedUnlocks, post.$id]));
+    localStorage.setItem("unlockedPosts", JSON.stringify(updated));
+
+    setUnlocked(true);
+    alert(`✅ Contact unlocked successfully! You were charged ₦${totalAmount.toLocaleString()}.`);
+  } catch (err) {
+    console.error("Unlock error:", err);
+    alert("Error unlocking contact: " + err.message);
+  } finally {
+    setProcessing(false);
   }
+}
+
 
   // ✅ Build contact links
   const whatsappLink = post.whatsapp
@@ -161,23 +162,24 @@ export default function PostDetails({ post, user, onClose, refreshPosts }) {
               >
                 🔒 <strong>Contact info locked</strong>
                 <p style={{ fontSize: "0.9em", marginTop: 5 }}>
-                  Pay ₦1,500 to unlock this user’s contact info.
+                  Pay ₦500 to unlock this user’s contact info.
                 </p>
                 <button
-                  onClick={handleUnlock}
-                  disabled={processing}
-                  style={{
-                    marginTop: 5,
-                    padding: "8px 14px",
-                    background: "#007bff",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                  }}
-                >
-                  {processing ? "Processing..." : "Unlock (₦1,500)"}
-                </button>
+  onClick={handleUnlock}
+  disabled={processing}
+  style={{
+    marginTop: 5,
+    padding: "8px 14px",
+    background: "#007bff",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    cursor: "pointer",
+  }}
+>
+  {processing ? "Processing..." : "Unlock (₦500)"}
+</button>
+
               </div>
             ) : (
               <div style={{ marginTop: 10 }}>

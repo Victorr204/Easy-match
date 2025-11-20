@@ -250,7 +250,7 @@ const Home = () => {
                                   )
                                 }
                               >
-                                View Details (₦1,500)
+                                View Details (₦500)
                               </button>
                             </div>
                           ))
@@ -319,9 +319,9 @@ const Home = () => {
                       <h4>How it works</h4>
                       <ol className="small">
                         <li>Register (must be 18+)</li>
-                        <li>Upload profile (₦700 fee)</li>
+                        <li>Upload profile (₦500 fee)</li>
                         <li>
-                          Browse posts. Pay ₦1,500 to unlock contact info.
+                          Browse posts. Pay ₦500 to unlock contact info.
                         </li>
                         <li>Unlocked profiles stay accessible forever.</li>
                       </ol>
